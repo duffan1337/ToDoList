@@ -10,8 +10,7 @@ const StartPage =()=>{
     <div className="App">
         <h1>Todo List</h1>
         
-		<h1>This application is a test task at WelbeX.
-            WelbeX hope you enjoy my app) </h1>
+		<h1>This is the usual ToDo in which you can write target goals and something else :)</h1>
 
     </div>
     
