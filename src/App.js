@@ -1,48 +1,76 @@
-import './App.css';
+import './App.less';
 import { useEffect, useState } from 'react';
-import { getApi } from './Api/api';
-import TaskInput from './Components/TaskInput';
 import { setAllTasksAC } from './Redux/tasksActions';
 import { useDispatch, useSelector } from 'react-redux';
-import TaskItem from './Components/TaskItem';
-import StartPage from './Components/StartPage';
-import { BrowserRouter as Router, NavLink, Route, Routes, Link} from 'react-router-dom'
-import TaskPage from './Components/TaskPage';
-
-const getTasks = ()=>(dispatch)=>{
-  debugger
-  getApi.getTasks().then(
-    data=>{dispatch(setAllTasksAC(data))})
-  }
+import { getDocs, collection, doc } from "firebase/firestore";
+import { auth, db } from "./firebase-config";
+import { BrowserRouter as Router, Route, Routes, Link} from 'react-router-dom'
+import TaskPage from './Components/taskPage/TaskPage';
+import Login from './Components/login/login';
+import { signOut } from "firebase/auth";
 
 
 const App = ()=>{
 
+	const [isAuth, setIsAuth] = useState(localStorage.getItem("isAuth"));
+	const postsCollectionRef = collection(db, "posts");
 	const dispatch = useDispatch()
- 	useEffect(() => {dispatch(getTasks())},[]);
+
+	const signUserOut = () => {
+		signOut(auth).then(() => {
+		  localStorage.clear();
+		  setIsAuth(false);
+		  window.location.pathname = "/login";
+		});
+	  };
+
+
+	 useEffect(() => {
+		const getPosts = async () => {
+		  const data = await getDocs(postsCollectionRef);
+		  console.log("docks",data.docs, doc.id)
+		  dispatch(setAllTasksAC(data.docs.map((doc) => ({ ...doc.data(), id: doc.id }))));
+		};
+		getPosts();
+	  }, []);
+
 
 	const {todos}=useSelector((state)=>{
 		return{
 			todos:state.tasks.tasks,
 		}
 	})
+	console.log("todos",todos)
 
 
-  return (
-    <div className="App">
+	return (
 		<Router>
-			<div className='navbar'>
-				<NavLink to="/"><button> Main </button></NavLink>
-				<NavLink to="/todo"><button> ToDo </button></NavLink>
-			</div>
-			<Routes>
-				<Route exact path="/" element={<StartPage/>}/>
-				<Route  path="/todo" element={<TaskPage todos={todos}/>}/>
-				<Route path="*" element={<div><h1>NOT FOUND</h1></div>}/>
-			</Routes>
+			
+		  <div>
+			{!isAuth ? (
+			  <Link to="/login"> Login </Link>
+			) : (
+			  <div className='logOut-button'>
+				<button onClick={signUserOut}> Log Out</button>
+			  </div>
+			)}
+		  </div>
+		  <Routes> 
+			<Route path="/" element={<TaskPage isAuth={isAuth}  todos={todos} />} />
+			<Route path="/login" element={<Login setIsAuth={setIsAuth} />} />
+		  </Routes>
 		</Router>
-    </div>
-  );
-}
+	  );
+	}
+
+//   return (
+//     <div className="App">
+// 		<Login></Login>
+// 		<TaskPage todos={todos}></TaskPage>
+//     </div>
+//   );
+// }
 
 export default App;
+
+
